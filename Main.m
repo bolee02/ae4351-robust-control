@@ -1,10 +1,10 @@
+%%%
 % Filename : Main
 % Created using the guidance given in AE4351: Robust Flight Control
 %
 % Bo Lee (5225604)
 % Matei Dinescu
-%%
-
+%%%
 
 %% FLIGHT CONDITION
 alpha = 20 * pi/180; % rad - angle of attack
@@ -22,25 +22,14 @@ Z_delta = 108.1144;  % m/s^2 - control force derivative
 M_delta = -131.3944; % 1/s^2 - control moment derivative
 A_alpha = 1434.7783; % m/s^2/rad - normal acceleration derivative
 A_delta = 115.0529;  % m/s^2/rad - control acceleration derivative
-omega_a = 150;   % rad/s - actuator natural frequency
-zeta_a = 0.7;    % [-] - actuator damping ratio
+omega_a = 150;       % rad/s - actuator natural frequency
+zeta_a = 0.7;        % [-] - actuator damping ratio
+
+V = M * a;           % m/s - missile velocity
 
 
 %% Q1.1: FLIGHT DYNAMICS
-V = M * a; % m/s
-
-% Actuator state space
-A_a = [0 1; -omega_a^2 -2*zeta_a*omega_a];
-B_a = [0; omega_a^2];
-C_a = [1 0; 0 1];
-D_a = [0; 0];
-
-G_a.InputName = 'u_cmd';
-G_a.StateName = {'x3', 'x4'};
-G_a.OutputName = {'u_m', 'udot_m'};
-save G_a
-
-% Missile state space
+% Create missile state space
 A_m = [-Z_alpha/V 1; M_alpha M_q];
 B_m = [-Z_delta; M_delta];
 C_m = [-A_alpha 0; 0 1];
@@ -52,10 +41,27 @@ G_m.StateName = {'x1', 'x2'};
 G_m.OutputName = {'y1', 'y2'};
 save G_m
 
-% Run Airframe.slx
+% Create actuator state space
+A_a = [0 1; -omega_a^2 -2*zeta_a*omega_a];
+B_a = [0; omega_a^2];
+C_a = [1 0; 0 1];
+D_a = [0; 0];
+
+G_a = ss(A_a, B_a, C_a, D_a);
+G_a.InputName = 'u_cmd';
+G_a.StateName = {'x3', 'x4'};
+G_a.OutputName = {'u_m', 'udot_m'};
+save G_a
+
+% Run Airframe.slx and visualize pole-zero map
 G_am = linearize('Airframe');
+G_am = ss2ss(G_am, [0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]);
+
+G_am_nz = zpk(G_am(1, 1));
+G_am_q = zpk(G_am(2,1));
+
+figure;
+iopzmap(G_am);
 
 
-
-
-
+%% Q1.2: LOOP SHAPING
