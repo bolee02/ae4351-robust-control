@@ -28,7 +28,7 @@ zeta_a = 0.7;        % [-] - actuator damping ratio
 V = M * a;           % m/s - missile velocity
 
 
-%% Q1.1: FLIGHT DYNAMICS
+%% Q1: SYSTEM MODELING
 % Create missile state space
 A_m = [-Z_alpha/V 1; M_alpha M_q];
 B_m = [-Z_delta; M_delta];
@@ -64,4 +64,4 @@ figure;
 iopzmap(G_am);
 
 
-%% Q1.2: LOOP SHAPING
+%% Q2: LOOP SHAPING
