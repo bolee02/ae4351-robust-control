@@ -31,8 +31,8 @@ V = M * a;           % m/s - missile velocity
 %% Q1: SYSTEM MODELING
 % Create missile state space
 A_m = [-Z_alpha/V 1; M_alpha M_q];
-B_m = [-Z_delta; M_delta];
-C_m = [-A_alpha 0; 0 1];
+B_m = [-Z_delta/V; M_delta];
+C_m = [-A_alpha/g 0; 0 1];
 D_m = [-A_delta/g; 0];
 
 G_m = ss(A_m, B_m, C_m, D_m);
@@ -55,13 +55,56 @@ save G_a
 
 % Run Airframe.slx and visualize pole-zero map
 G_am = linearize('Airframe');
-G_am = ss2ss(G_am, [0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]);
+T_state = [0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0];
+G_am = ss2ss(G_am, T_state);
 
 G_am_nz = zpk(G_am(1, 1));
 G_am_q = zpk(G_am(2,1));
 
-figure;
-iopzmap(G_am);
+%figure;
+%iopzmap(G_am);
+%grid on;
+%title('iopzmap(G_{am})');
 
 
 %% Q2: LOOP SHAPING
+% Damping gain design
+%figure;
+%G_ol_q = G_am(2, 1);
+%rlocusplot(-G_ol_q);
+%sgrid;
+%title('rlocusplot(-G_{ol_q})');
+
+C_q = -0.163; % from rlocusplot
+
+G_cl_q_unsc = linearize('ClosedLoop_Cq');
+G_cl_q_unsc = ss2ss(G_cl_q_unsc, T_state);
+G_cl_q_unsc_zpk = zpk(G_cl_q_unsc);
+
+% Scaling gain design
+C_sc = 1 / dcgain(G_cl_q_unsc);
+G = linearize('ClosedLoop_CqCsc');
+G_zpk = zpk(G);
+
+%figure;
+%step(G);
+%grid on;
+%title('step(G)');
+
+% Integral Gain Design
+C_i = 1;
+
+G_ol_nz = linearize('ClosedLoop_CqCscCi');
+G_ol_nz = ss2ss(G_ol_nz, [0 0 0 1 0; ...
+    0 0 0 0 1; ...
+    0 1 0 0 0; ...
+    0 0 1 0 0; ...
+    1 0 0 0 0]);
+G_ol_nz_zpk = zpk(G_ol_nz);
+
+%sisotool(G_ol_nz);
+C_i_pm60 = 6.2754; % from sisotool
+
+
+%% Q3: MIXED SENSITIVITY DESIGN
+% Weighting filters
