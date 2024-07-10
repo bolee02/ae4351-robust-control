@@ -91,6 +91,11 @@ G_zpk = zpk(G);
 %grid on;
 %title('step(G)');
 
+%figure;
+%iopzmap(G);
+%grid on;
+%title('iopzmap(G)');
+
 % Integral Gain Design
 C_i = 1;
 
@@ -107,4 +112,64 @@ C_i_pm60 = 6.2754; % from sisotool
 
 
 %% Q3: MIXED SENSITIVITY DESIGN
-% Weighting filters
+% Q3A: Weighting filter computation
+M_s_min = 0.5 * (1 / sin(deg2rad(30/2)));
+
+dcgain_W1 = db2mag(-60);
+freq_W1 = 4;
+mag_W1 = db2mag(-3.01);
+hfgain_W1 = M_s_min;
+
+W1  = inv(makeweight(dcgain_W1, [freq_W1,mag_W1], hfgain_W1));
+
+dcgain_W2 = hfgain_W1;
+freq_W2 = bandwidth(G_a(1, 1), -3.01);
+mag_W2 = db2mag(-15);
+hfgain_W2 = dcgain_W1;
+
+W2  = inv(makeweight(dcgain_W2, [freq_W2,mag_W2], hfgain_W2));
+
+% Q3B: Reference model
+t_sd = 0.18;
+M_d = 0.05;
+z_m = 36.6; % from iopzmap(G)
+
+%omega_d = 0;
+%zeta_d = 0;
+%error = inf;
+
+%omega_d_range = linspace(0, 100, 100);
+%zeta_d_range = linspace(0, 1, 100);
+
+%for omega_d_temp = omega_d_range
+%    for zeta_d_temp = zeta_d_range
+%        num_temp = [-omega_d_temp^2/z_m, omega_d_temp^2];
+%        den_temp = [1, 2 * zeta_d_temp * omega_d_temp, omega_d_temp^2];
+%        T_d_temp = tf(num_temp, den_temp);
+
+%        step_response = stepinfo(T_d_temp, 'SettlingTimeThreshold', 0.05);
+%        st_error = abs(step_response.SettlingTime - t_sd);
+%        os_error = abs(step_response.Overshoot/100 - M_d);
+%        tot_error = os_error + st_error;
+
+%        if tot_error < error
+%            error = tot_error;
+%            omega_d = omega_d_temp;
+%            zeta_d = zeta_d_temp;
+%        end
+%    end
+%end
+
+omega_d = 28.2838; % from for loop
+zeta_d = 0.7071; % from for loop
+
+num = [-omega_d / z_m, omega_d];
+den = [1, 2 * zeta_d * omega_d, omega_d^2];
+T_d = tf(num, den);
+
+figure;
+step(T_d);
+grid on;
+title('step(T_d)');
+
+T_d_zpk = zpk(T_d);
