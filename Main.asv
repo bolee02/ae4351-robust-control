@@ -291,12 +291,5 @@ P = ss2ss(P,T_P);
 
 struct_options = hinfstructOptions('UseParallel', true, 'TolGain', 1e-6);
 [C_e_red_star, gamma_star, info] = hinfstruct(P,C_e_red_star0, struct_options);
-C_e_red_star = zpk(C_e_red_star);
 
-T_wz_star = lft(P, C_e_red_star, 1, 1);
-gamma_1_star =  norm(T_wz_star(1,1),'inf');
-gamma_2_star =  norm(T_wz_star(2,1),'inf');
-gamma_3_star =  norm(T_wz_star(3,1),'inf');
-
-%% Q3D2
-
+lft(P, C_e_red_star)
