@@ -221,22 +221,9 @@ hfgain_W3 = M_s_min;
 
 W3  = inv(makeweight(dcgain_W3, [freq_W3,mag_W3], hfgain_W3));
 i = 0.00;
-% while gamma_1 <1 && gamma_2 <1 && gamma_3<1
-%     i = i + 0.01;
-%     mag_W3 = db2mag(-10 - i);
-%     W3  = inv(makeweight(dcgain_W3, [freq_W3,mag_W3], hfgain_W3));
-% 
-%     P = linearize('Design');
-%     P = ss2ss(P,T_P);
-%     [C_e,T_wz,gamma] = hinfsyn(P,n_meas,n_cont,hinf_opts);
-%     gamma_1 =  norm(T_wz(1,1),'inf');
-%     gamma_2 =  norm(T_wz(2,1),'inf');
-%     gamma_3 =  norm(T_wz(3,1),'inf');
-% end
-gamma_max = 0;
-while gamma_max<1
-    i = i + 0.1;
-    mag_W3 = db2mag(-10 - i);
+while gamma_1 <1 && gamma_2 <1 && gamma_3<1
+    i = i + 0.01;
+    mag_W3 = db2mag(-3.01 - i);
     W3  = inv(makeweight(dcgain_W3, [freq_W3,mag_W3], hfgain_W3));
 
     P = linearize('Design');
@@ -245,7 +232,6 @@ while gamma_max<1
     gamma_1 =  norm(T_wz(1,1),'inf');
     gamma_2 =  norm(T_wz(2,1),'inf');
     gamma_3 =  norm(T_wz(3,1),'inf');
-    gamma_max = max([gamma_1, gamma_2, gamma_3]);
 end
 
 
