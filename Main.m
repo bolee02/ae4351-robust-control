@@ -136,31 +136,31 @@ t_sd = 0.18;
 M_d = 0.05;
 z_m = 36.6; % from iopzmap(G)
 
-%omega_d = 0;
-%zeta_d = 0;
-%error = inf;
+omega_d = 0;
+zeta_d = 0;
+error = inf;
 
-%omega_d_range = linspace(0, 100, 100);
-%zeta_d_range = linspace(0, 1, 100);
+omega_d_range = linspace(0, 30, 300);
+zeta_d_range = linspace(0, 1, 100);
 
-%for omega_d_temp = omega_d_range
-%    for zeta_d_temp = zeta_d_range
-%        num_temp = [-omega_d_temp^2/z_m, omega_d_temp^2];
-%        den_temp = [1, 2 * zeta_d_temp * omega_d_temp, omega_d_temp^2];
-%        T_d_temp = tf(num_temp, den_temp);
+for omega_d_temp = omega_d_range
+    for zeta_d_temp = zeta_d_range
+        num_temp = [-omega_d_temp^2/z_m, omega_d_temp^2];
+        den_temp = [1, 2 * zeta_d_temp * omega_d_temp, omega_d_temp^2];
+        T_d_temp = tf(num_temp, den_temp);
 
-%        step_response = stepinfo(T_d_temp, 'SettlingTimeThreshold', 0.05);
-%        st_error = abs(step_response.SettlingTime - t_sd);
-%        os_error = abs(step_response.Overshoot/100 - M_d);
-%        tot_error = os_error + st_error;
+        step_response = stepinfo(T_d_temp, 'SettlingTimeThreshold', 0.05);
+        st_error = abs(step_response.SettlingTime - t_sd);
+        os_error = abs(step_response.Overshoot/100 - M_d);
+        tot_error = os_error + st_error;
 
-%        if tot_error < error
-%            error = tot_error;
-%            omega_d = omega_d_temp;
-%            zeta_d = zeta_d_temp;
-%        end
-%    end
-%end
+        if tot_error < error
+            error = tot_error;
+            omega_d = omega_d_temp;
+            zeta_d = zeta_d_temp;
+        end
+    end
+end
 
 omega_d = 28.2838; % from for loop
 zeta_d = 0.7071; % from for loop
@@ -169,12 +169,23 @@ num = [-omega_d^2 / z_m, omega_d^2];
 den = [1, 2 * zeta_d * omega_d, omega_d^2];
 T_d = tf(num, den);
 
+A1 = dcgain_W1;
+M1 = hfgain_W1;
+omega1 = sqrt(((1/mag_W1^2) * freq_W1^2 - (freq_W1^2)/hfgain_W1^2)/ ...
+    (1 - (1/mag_W1^2) * dcgain_W1^2));
+
+A2 = dcgain_W2;
+M2 = hfgain_W2;
+omega2 = sqrt(((1/mag_W2^2) * (freq_W2 * hfgain_W2)^2 - freq_W2^2)/ ...
+    (1/dcgain_W2^2 - (1/mag_W2^2)));
+
 figure;
 step(T_d);
 grid on;
 title('step(T_d)');
 
 T_d_zpk = zpk(T_d);
+
 %% 
 %%Q3C: Feedback Controller design (hinfsyn)
 
