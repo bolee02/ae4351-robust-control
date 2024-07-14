@@ -64,8 +64,12 @@ G_am_q = zpk(G_am(2,1));
 %figure;
 %iopzmap(G_am);
 %grid on;
-%title('iopzmap(G_{am})');
+%set(gcf, "Color", "white")
+%title('G_{am} Pole-zero Map');
 
+%damp(G_am)
+%zero(G_am(1,1))
+%zero(G_am(2,1))
 
 %% Q2: LOOP SHAPING
 % Damping gain design
@@ -80,6 +84,8 @@ C_q = -0.163; % from rlocusplot
 G_cl_q_unsc = linearize('ClosedLoop_Cq');
 G_cl_q_unsc = ss2ss(G_cl_q_unsc, T_state);
 G_cl_q_unsc_zpk = zpk(G_cl_q_unsc);
+G_ol_q = zpk(G_am(1, 1));
+%iopzmap(G_cl_q_unsc)
 
 % Scaling gain design
 C_sc = 1 / dcgain(G_cl_q_unsc);
@@ -89,7 +95,8 @@ G_zpk = zpk(G);
 %figure;
 %step(G);
 %grid on;
-%title('step(G)');
+%set(gcf, "Color", "white")
+%title('Step Response of G');
 
 %figure;
 %iopzmap(G);
@@ -109,6 +116,7 @@ G_ol_nz_zpk = zpk(G_ol_nz);
 
 % sisotool(G_ol_nz);
 C_i_pm60 = 6.2754; % from sisotool
+C_i_5ps = 5.8901;
 
 
 %% Q3: MIXED SENSITIVITY DESIGN
