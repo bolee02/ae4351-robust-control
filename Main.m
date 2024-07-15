@@ -114,10 +114,17 @@ G_ol_nz = ss2ss(G_ol_nz, [0 0 0 1 0; ...
     1 0 0 0 0]);
 G_ol_nz_zpk = zpk(G_ol_nz);
 
-% sisotool(G_ol_nz);
-C_i_pm60 = 6.2754; % from sisotool
-C_i_5ps = 5.8901;
+%sisotool(G_ol_nz);
+C_i_pm60 = 6.2498; % from sisotool
+C_i = 5.4662;
 
+G_ol_nz2 = linearize('ClosedLoop_CqCscCi');
+G_ol_nz2 = ss2ss(G_ol_nz2, [0 0 0 1 0; ...
+    0 0 0 0 1; ...
+    0 1 0 0 0; ...
+    0 0 1 0 0; ...
+    1 0 0 0 0]);
+G_ol_nz2_zpk = zpk(G_ol_nz2);
 
 %% Q3: MIXED SENSITIVITY DESIGN
 % Q3A: Weighting filter computation
@@ -189,11 +196,21 @@ omega2 = sqrt(((1/mag_W2^2) * (freq_W2 * hfgain_W2)^2 - freq_W2^2)/ ...
     (1/dcgain_W2^2 - (1/mag_W2^2)));
 
 figure;
+sigma(inv(W1),'r-',inv(W2),'b-')
+set(gcf, "Color", "white")
+grid on;
+xlim([1e-3 1e4]);
+legend('W1^{-1}', 'W2^{-1}');
+
+figure;
 step(T_d);
 grid on;
-title('step(T_d)');
+set(gcf, "Color", "white")
+title('Step Response of T_d');
 
 T_d_zpk = zpk(T_d);
+
+
 %% 
 %%Q3C: Feedback Controller design (hinfsyn)
 
@@ -275,7 +292,6 @@ gamma_2 =  norm(T_wz(2,1),'inf');
 gamma_3 =  norm(T_wz(3,1),'inf');
 
 
-
 %% Q3C2: Feedback Controller
 s= tf('s');
 % C0_e = minreal(C0_e);
@@ -307,6 +323,7 @@ figure;
 iopzmap(C_i_red, 'r', C_i_min, 'b');
 grid on;
 legend('C_i_{red}', 'C_i_{min}')
+
 %% Q3C3 part 1
 
 %Assinging controller values
