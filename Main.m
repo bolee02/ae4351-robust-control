@@ -194,7 +194,6 @@ grid on;
 title('step(T_d)');
 
 T_d_zpk = zpk(T_d);
-
 %% 
 %%Q3C: Feedback Controller design (hinfsyn)
 
