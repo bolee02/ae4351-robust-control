@@ -250,7 +250,7 @@ i = 0.00;
 %     gamma_2 =  norm(T_wz(2,1),'inf');
 %     gamma_3 =  norm(T_wz(3,1),'inf');
 % end
-mag_W3 = db2mag(-18.08);
+mag_W3 = db2mag(-18.07);
 W3  = inv(makeweight(dcgain_W3, [freq_W3,mag_W3], hfgain_W3));
 
 P = linearize('Design');
@@ -276,9 +276,124 @@ gamma_3 =  norm(T_wz(3,1),'inf');
 
 
 
-%% Q3C2: Feedback Controller 
-
+%% Q3C2: Feedback Controller
+s= tf('s');
+% C0_e = minreal(C0_e);
 [z, p, k] = zpkdata(C0_e, 'v');
+%by inspection
+
+z_min = z(2:7);
+p_min = p(2:8);
+k_min = k*z(1)/p(1)*z(8)/p(9);
+C_e_min = zpk(z_min, p_min, k_min);
+
+
+figure;
+bode(C0_e, C_e_min)
+grid on 
+legend('C0_e', 'C_e_min')
+
+C_i_min = zpk(z_min, p_min(1:6), k_min);
+C_i_zpk = zpk(C_i_min);
+
+C_i_red = balred(C_i_zpk, 3);
+
+figure;
+bode(C_i_red, 'r', C_i_min, 'b')
+grid on 
+legend('C_i_{red}', 'C_i_{min}')
+
+figure;
+iopzmap(C_i_red, 'r', C_i_min, 'b');
+grid on;
+legend('C_i_{red}', 'C_i_{min}')
+%% Q3C3 part 1
+
+%Assinging controller values
+C_i = C_i_red;
+F_f = 1;
+
+%Retrieveing matrix transfer function
+T = linearize('ClosedLoop_Test');
+T = zpk(T);
+
+%Isolating required transfer functions
+So = T(1,1);
+Ce_So = T(2,1);
+To = T(3,1);
+Tm = T(4,1);
+Tr_udot = T(6,1);
+Ti = -T(2,2); %Need to plot Ti
+So_G = T(3,2);
+Si = T(5,2);
+
+%First figure
+figure;
+subplot(2,3,1);
+
+sigma(inv(W1), 'r', So, 'b*', Si, 'b', sigma_opts)
+grid on
+
+
+subplot(2,3,2);
+sigma(inv(W2), 'r', Ce_So, 'b', sigma_opts)
+grid on
+
+
+subplot(2,3,3);
+sigma(inv(W3), 'r', Tm, 'b', sigma_opts)
+grid on
+
+
+subplot(2,3,4);
+sigma(Ti, 'b*', To, 'b', sigma_opts)
+grid on
+
+subplot(2,3,5);
+sigma(So_G, 'b', sigma_opts)
+grid on
+
+subplot(2,3,6);
+sigma(C0_e, 'b', C_i_red/s, 'b', sigma_opts)
+grid on
+
+sigma_opts2 = sigmaoptions;
+sigma_opts2.MagUnits = 'abs';
+sigma_opts2.XLim = [1e1, 1e3];
+
+figure;
+sigma(C0_e, 'b', C_i_red/s, 'b', sigma_opts2)
+grid on
+
+%% Q3C3 part 2:
+T_OL = linearize("OpenLoop_Test");
+
+[GM, PM, omega_cg, omega_cp] = margin(T_OL);
+DM = deg2rad(PM)/ omega_cp * 1000;
+
+figure;
+bode(T_OL)
+grid on
+
+%% Q3C3 part 3
+
+figure;
+subplot(2,2,1)
+step(So)
+grid on
+
+subplot(2,2,2)
+step(T_d, 'r',  To, 'b')
+grid on
+
+subplot(2,2,3)
+step(So_G)
+grid on
+
+subplot(2,2,4)
+step(Tr_udot*180/pi)
+grid on
+
 
 %% Q3D: Feedback controller (hinfstruct)
 s= tf('s');
@@ -297,7 +412,7 @@ T_P = [0 0 1 0 0 0 0 0 0;
 P = ss2ss(P,T_P);
 
 struct_options = hinfstructOptions('UseParallel', true, 'TolGain', 1e-6);
-[C_e_red_star, gamma_star, info] = hinfstruct(P,C_e_red_star0, struct_options);
+[C_e_red_star, gamma_star, ~] = hinfstruct(P,C_e_red_star0, struct_options);
 C_e_red_star = zpk(C_e_red_star);
 
 T_wz_star = lft(P, C_e_red_star, 1, 1);
@@ -305,5 +420,171 @@ gamma_1_star =  norm(T_wz_star(1,1),'inf');
 gamma_2_star =  norm(T_wz_star(2,1),'inf');
 gamma_3_star =  norm(T_wz_star(3,1),'inf');
 
+figure
+sigma(T_wz_star, T_wz_star(1,1), T_wz_star(2,1), T_wz_star(3,1), sigma_opts)
+legend('T_wz(s)', 'T_wz_1(s)', 'T_wz_2(s)', 'T_wz_3(s)')
+grid on
+
+C_i_red_star = s* C_e_red_star;
+figure;
+bode(C_i_min, 'b*', C_i_red, 'r', C_i_red_star, 'm')
+grid on
+legend('C_{i_min}', 'C_{i_red}', 'C_{i_{red_star}}')
+
 %% Q3D2
 
+%Assinging controller values
+C_i = s* C_e_red_star;
+F_f = 1;
+
+%Retrieveing matrix transfer function
+T = linearize('ClosedLoop_Test');
+T = zpk(T);
+
+%Isolating required transfer functions
+So_star = T(1,1);
+Ce_So_star = T(2,1);
+To_star = T(3,1);
+Tm_star = T(4,1);
+Tr_udot_star = T(6,1);
+Ti_star = -T(2,2); %Need to plot Ti
+So_G_star = T(3,2);
+Si_star = T(5,2);
+
+%First figure
+figure;
+subplot(2,3,1);
+
+sigma(inv(W1), 'r', So_star, 'b*', Si_star, 'b', sigma_opts)
+grid on
+
+
+subplot(2,3,2);
+sigma(inv(W2), 'r', Ce_So_star, 'b', sigma_opts)
+grid on
+
+
+subplot(2,3,3);
+sigma(inv(W3), 'r', Tm_star, 'b', sigma_opts)
+grid on
+
+
+subplot(2,3,4);
+sigma(Ti_star, 'b*', To_star, 'b', sigma_opts)
+grid on
+
+subplot(2,3,5);
+sigma(So_G_star, 'b', sigma_opts)
+grid on
+
+subplot(2,3,6);
+sigma(C_i_red/s, 'b', C_e_red_star, 'b', sigma_opts)
+grid on
+
+%% Q3D part 2:
+T_OL_star = linearize("OpenLoop_Test");
+
+[GM_star, PM_star, omega_cg_star, omega_cp_star] = margin(T_OL_star);
+DM_star = deg2rad(PM_star)/ omega_cp_star * 1000;
+
+figure;
+bode(T_OL_star)
+grid on
+
+%% Q3D part 3
+
+figure;
+subplot(2,2,1)
+step(So_star)
+grid on
+
+subplot(2,2,2)
+step(T_d, 'r',  To_star, 'b')
+grid on
+
+subplot(2,2,3)
+step(So_G_star)
+grid on
+
+subplot(2,2,4)
+step(Tr_udot_star*180/pi)
+grid on
+
+%% Q3E
+
+
+F_f0 = T_d /minreal(To_star);
+
+F_f0_zpk = zpk(F_f0);
+
+[z_F, p_F, k_F] = zpkdata(F_f0_zpk, 'v');
+
+%Selecting poles and zeroes based on inspection
+z_F_del = z_F([1 3 4]);
+p_F_del = p_F(3);
+z_F([1 3 4]) = [];
+k_F = k_F/abs(p_F_del(1)) * abs(z_F_del(1)) * abs(z_F_del(2)) * abs(z_F_del(3));
+p_F(3) = [];
+F_f_lf = zpk(z_F, p_F, k_F);
+
+%Checking wheteher gain is restored
+dcgain_f0 = dcgain(F_f0_zpk);
+dcgain_f = dcgain(F_f_lf);
+sigma_opts.XLim = [1e0, 0.1e3];
+
+% figure;
+% sigma(F_f0_zpk, F_f_lf, sigma_opts)
+% grid on
+
+[F_f, info] = balred(F_f_lf, 3);
+
+% figure;
+% bode(F_f, F_f_lf)
+% grid on
+
+
+
+%% Q3E.3
+
+
+%Assinging controller values
+C_i = s* C_e_red_star;
+
+%Retrieveing matrix transfer function
+T_F= linearize('ClosedLoop_Test');
+T_F = zpk(T);
+
+%Isolating required transfer functions
+So_F = T_F(1,1);
+Ce_So_F = T_F(2,1);
+To_F = T_F(3,1);
+Tm_F = T_F(4,1);
+Tr_udot_F = T_F(6,1);
+Ti_F = -T_F(2,2); %Need to plot Ti
+So_G_F = T_F(3,2);
+Si_F = T_F(5,2);
+
+figure;
+subplot(2,2,1)
+sigma(inv(W3), 'r', Tm, 'b', Tm_star, 'm', Tm_F, 'g')
+grid on
+legend('W3^(-1)', 'hinfsyn', 'hinfstruct', 'feedforward')
+
+subplot(2,2,3)
+sigma(zpk(C_i_pm60), 'r', C_i_red, 'b', C_e_red_star, 'm', F_f, 'g')
+grid on
+legend('C_i_pm60', 'hinfsyn', 'hinfstruct', 'feedforward')
+
+subplot(2,2,2)
+step(T_d, 'r', To, 'b', To_star, 'm', To_F, 'g')
+grid on
+legend('T_d', 'hinfsyn', 'hinfstruct', 'feedforward')
+
+subplot(2,2,4)
+step(Tr_udot*180/pi, 'r', Tr_udot_star*180/pi, 'b', Tr_udot_F*180/pi, 'm')
+grid on
+legend('hinfsyn', 'hinfstruct', 'feedforward')
+
+figure;
+sigma(F_f)
+grid on
